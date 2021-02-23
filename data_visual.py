@@ -1,6 +1,8 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import numpy as np
+import time
 
 def data_prepro():
     data = pd.read_csv('./data/kaggle_survey_2020_responses.csv', low_memory=False)
@@ -13,7 +15,17 @@ def data_prepro():
 
 def show_countplot(data, data_no, q, fsize=(10,6)):
     plt.figure(figsize=fsize)
-    sns.countplot(data=data.sort_values("Q1"), y=data_no).set_title(q[data_no])
+    try:
+        sns.countplot(data=data, y=data_no).set_title(q[data_no])
+    except:
+        sns.countplot(data=data, y=data_no)
+
+def multiple_check(data,q, q_no):
+    q_num = q.filter(regex=q_no)[0].split("-")[0]
+    data_q = data.filter(regex=q_no)  # Q7의 data를 뽑아옴
+    data_desc = data_q.describe()  # 요약본
+
+    return data_q, q_num, data_desc
 
 def age_data(data, q):
     check = int(input('''나이 데이터 확인입니다. 확인을 원하시는 데이터의 번호를 입력해주세요. 
@@ -111,10 +123,46 @@ def career_data(data,q):
         print("잘못 입력하셨습니다.\n메뉴로 강제 이동됩니다.")
         return False
 
+def lang_data(data,q):
+    check = int(input('''프로그래밍 언어 데이터 확인입니다. 확인을 원하시는 데이터의 번호를 입력해주세요. 
+                            (1:언어데이터 자체, 2:언어 데이터 그래프, 3:데이터사이언티스트가 되기 위해 처음 배우기 좋은 언어, 4:사용하고 있는 환경)'''))
+    if check == 1:
+        _ , q_no, data_desc = multiple_check(data=data, q=q, q_no="Q7")
+
+        print(data_desc.loc[["top","count"]].T.set_index("top")) # T는 컬럼과 인덱스의 값을 바꿔주는 것
+    elif check == 2:
+        _ , q_no, data_desc = multiple_check(data=data, q=q, q_no="Q7")
+
+        plt.figure(figsize=(10,6))
+        plt.title(q_no)
+        plt.plot(data_desc.loc[["top","count"]].T.set_index("top"))
+        # sns.barplot(data=data_desc, y=data_desc.index, x="count")
+        plt.show(block=True)
+    elif check == 3:
+        show_countplot(data=data, data_no="Q8", q=q)
+        plt.show(block=True)
+    elif check == 4:
+        _ , q_no, data_desc = multiple_check(data=data, q=q, q_no="Q9")
+
+        plt.figure(figsize=(10,6))
+        plt.title(q_no)
+        plt.plot(data_desc.loc[["top","count"]].T.set_index("top"))
+        plt.show(block=True)
+    else:
+        print("잘못 입력하셨습니다.\n메뉴로 강제 이동됩니다.")
+        return False
+
+def project_data(data, q):
+    print('''캐글 유저들이 프로젝트시 사용하는 컴퓨팅 플랫폼 데이터 확인입니다. 시각화하겠습니다.''', end='\n\n')
+
+    show_countplot(data=data, data_no="Q11", q=q)
+    plt.show(block=True)
+
 def korean_data(data, q):
     check = int(input('''한국인 데이터 확인입니다. 확인을 원하시는 데이터의 번호를 입력해주세요. 
-                            (1:한국사람 학력, 2:한국사람 직업, 3:한국사람 경력, 4:한국사람 성별)'''))
+                            (1:한국사람 학력, 2:한국사람 직업, 3:한국사람 경력, 4:한국사람 성별, 5:한국사람들이 사용하는 프로그래밍 언어(그래프x))'''))
     data = data[data["Q3"] == "Republic of Korea"]
+
     if check == 1:
         show_countplot(data=data, data_no="Q4", q=q, fsize=(17,6))
         plt.show(block=True)
@@ -127,37 +175,62 @@ def korean_data(data, q):
     elif check == 4:
         show_countplot(data=data, data_no="Q2", q=q)
         plt.show(block=True)
+    elif check == 5:
+        _ , _, data_desc = multiple_check(data=data, q=q, q_no="Q7")
+
+        print(data_desc.loc[["top", "count"]].T.set_index("top"))
+
+        # plt.figure(figsize=(10, 6))
+        # plt.title(q_7)
+        # plt.plot(data_desc.loc[["top", "count"]].T.set_index("top"))
+        # plt.show(block=True)
     else:
         print("잘못 입력하셨습니다.\n메뉴로 강제 이동됩니다.")
         return False
 
 if __name__ == "__main__":
     data, q = data_prepro()
+
     while True:
         choice = int(input('''----- 2020 캐글 유저 설문조사 데이터입니다. -----
         확인하실 데이터를 골라주시기 바랍니다.
         0. 끝내기
-        1. 나이데이터
-        2. 성별데이터
-        3. 나라데이터
-        4. 교육데이터
-        5. 직업데이터
-        6. 경력데이터
-        7. 대한민국 유저들의 데이터(학력 등)'''))
+        1. 캐글 유저들의 데이터
+        2. 대한민국 유저들의 데이터'''))
         if choice == 0:
             print("프로그램 종료하겠습니다. 감사합니다.")
             break
         elif choice == 1:
-            age_data(data=data, q=q)
+            str = int(input('''
+                                0. 나가기
+                                1. 나이데이터
+                                2. 성별데이터
+                                3. 나라데이터
+                                4. 교육데이터
+                                5. 직업데이터
+                                6. 경력데이터
+                                7. 캐글 사용자들의 프로그래밍 언어 사용 데이터
+                                8. 데이터 사이언스 프로젝트에 참여할 때 사용하는 컴퓨팅 플랫폼 데이터'''))
+            if str == 0:
+                print("--- 캐글 유저 데이터 확인에서 나가겠습니다. ---", end='\n\n')
+                time.sleep(1)
+                continue
+            elif str == 1:
+                age_data(data=data, q=q)
+            elif str == 2:
+                sex_data(data=data, q=q)
+            elif str == 3:
+                country_data(data=data, q=q)
+            elif str == 4:
+                edu_data(data=data, q=q)
+            elif str == 5:
+                job_data(data=data, q=q)
+            elif str == 6:
+                career_data(data=data, q=q)
+            elif str == 7:
+                lang_data(data=data, q=q)
+            elif str == 8:
+                project_data(data=data, q=q)
+
         elif choice == 2:
-            sex_data(data=data, q=q)
-        elif choice == 3:
-            country_data(data=data, q=q)
-        elif choice == 4:
-            edu_data(data=data, q=q)
-        elif choice == 5:
-            job_data(data=data, q=q)
-        elif choice == 6:
-            career_data(data=data, q=q)
-        elif choice == 7:
             korean_data(data=data, q=q)
