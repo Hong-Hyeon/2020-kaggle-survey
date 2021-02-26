@@ -147,6 +147,7 @@ def lang_data(data,q):
         plt.figure(figsize=(10,6))
         plt.title(q_no)
         plt.plot(data_desc.loc[["top","count"]].T.set_index("top"))
+        plt.xticks(fontsize=10, rotation=45)
         plt.show(block=True)
     else:
         print("잘못 입력하셨습니다.\n메뉴로 강제 이동됩니다.")
@@ -158,32 +159,50 @@ def project_data(data, q):
     show_countplot(data=data, data_no="Q11", q=q)
     plt.show(block=True)
 
+def pay_data(data, q):
+    print('''캐글 유저들의 연봉 데이터입니다. 시각화하겠습니다.''')
+
+    show_countplot(data=data, data_no="Q24", q=q)
+    plt.show(block=True)
+
 def korean_data(data, q):
     check = int(input('''한국인 데이터 확인입니다. 확인을 원하시는 데이터의 번호를 입력해주세요. 
-                            (1:한국사람 학력, 2:한국사람 직업, 3:한국사람 경력, 4:한국사람 성별, 5:한국사람들이 사용하는 프로그래밍 언어(그래프x))'''))
-    data = data[data["Q3"] == "Republic of Korea"]
+                            (1:한국사람 학력, 2:한국사람 직업, 3:한국사람 경력, 4:한국사람 성별, 5:한국사람들이 사용하는 프로그래밍 언어,
+                            6:한국유저의 연봉)'''))
+    data_ = data[data["Q3"] == "Republic of Korea"]
 
     if check == 1:
-        show_countplot(data=data, data_no="Q4", q=q, fsize=(17,6))
+        show_countplot(data=data_, data_no="Q4", q=q, fsize=(17,6))
         plt.show(block=True)
     elif check == 2:
-        show_countplot(data=data, data_no="Q5", q=q)
+        show_countplot(data=data_, data_no="Q5", q=q)
         plt.show(block=True)
     elif check == 3:
-        show_countplot(data=data, data_no="Q6", q=q)
+        show_countplot(data=data_, data_no="Q6", q=q)
         plt.show(block=True)
     elif check == 4:
-        show_countplot(data=data, data_no="Q2", q=q)
+        show_countplot(data=data_, data_no="Q2", q=q)
         plt.show(block=True)
     elif check == 5:
-        _ , _, data_desc = multiple_check(data=data, q=q, q_no="Q7")
+        q7_cols = data_.filter(regex="Q7").describe().loc["top"].tolist()
+        data__ = data_.filter(regex="Q7|Q2$").groupby("Q2").count()
 
-        print(data_desc.loc[["top", "count"]].T.set_index("top"))
+        data__.columns = q7_cols
+        # print(data__)
+        # data__ = data__.loc[["Man","Woman"]].T
+        # print(type(data__))
+        sns.barplot(data=data__, ci=None)
+        plt.xticks(fontsize=10, rotation=45)
+        plt.show(block=True)
 
-        # plt.figure(figsize=(10, 6))
-        # plt.title(q_7)
-        # plt.plot(data_desc.loc[["top", "count"]].T.set_index("top"))
+    elif check == 6:
+        # 연봉
+        # show_countplot(data=data_.sort_values(by="Q24"), data_no="Q24", q=q)
         # plt.show(block=True)
+        # 성별 + 연봉
+        sns.countplot(data=data_, x="Q24", hue="Q2")
+        plt.xticks(fontsize=10, rotation=45)
+        plt.show(block=True)
     else:
         print("잘못 입력하셨습니다.\n메뉴로 강제 이동됩니다.")
         return False
@@ -210,7 +229,8 @@ if __name__ == "__main__":
                                 5. 직업데이터
                                 6. 경력데이터
                                 7. 캐글 사용자들의 프로그래밍 언어 사용 데이터
-                                8. 데이터 사이언스 프로젝트에 참여할 때 사용하는 컴퓨팅 플랫폼 데이터'''))
+                                8. 데이터 사이언스 프로젝트에 참여할 때 사용하는 컴퓨팅 플랫폼 데이터
+                                9. 연봉 데이터'''))
             if str == 0:
                 print("--- 캐글 유저 데이터 확인에서 나가겠습니다. ---", end='\n\n')
                 time.sleep(1)
@@ -231,6 +251,8 @@ if __name__ == "__main__":
                 lang_data(data=data, q=q)
             elif str == 8:
                 project_data(data=data, q=q)
+            elif str == 9:
+                pay_data(data=data, q=q)
 
         elif choice == 2:
             korean_data(data=data, q=q)
